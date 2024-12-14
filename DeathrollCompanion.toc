@@ -1,0 +1,12 @@
+## Author: Luckywolf-Stormrage (https://www.github.com/JP1998)
+## Interface: 110005
+## Title: Deathroll Companion
+## SavedVariables: DeathrollCompanionData
+## Notes:
+## Version: @project-version@
+## X-Wago-ID: NYI
+src/base.lua
+locales/enUS.lua
+locales/enGB.lua
+locales/deDE.lua
+DeathrollCompanion.lua

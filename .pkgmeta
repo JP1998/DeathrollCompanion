@@ -1,0 +1,6 @@
+
+ignore:
+  - "*.sh"
+  - "*.conf"
+  - "assets/Readme/*"
+  - Readme.md

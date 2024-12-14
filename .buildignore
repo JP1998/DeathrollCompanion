@@ -1,0 +1,10 @@
+.git/
+.github/
+.idea/
+assets/Readme/
+.gitignore
+.buildignore
+.pkgmeta
+*.sh
+*.conf
+*.md
