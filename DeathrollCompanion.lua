@@ -205,9 +205,28 @@ local DeathrollCompanionData_Base = {
             }
             --]]
         }
-    },
+    }
 }
 
+local GOLD_MULTIPLIER = 10000;
+
+app.GameOffers = {
+    --[[
+    ["name"] = {
+        ["amount"] = 1234,
+        ["roll"] = 1234,
+    }
+    ]]
+};
+
+app.CurrentGame = nil;
+--[[
+    {
+        ["amount"] = 0,
+        ["latestRoll"] = 0,
+        ["opponent"] = "Name";
+    }
+]]
 
 app:RegisterEvent("ADDON_LOADED", "DeathrollCompanion", function(addon)
     if addon ~= app:GetName() then
@@ -244,7 +263,17 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
         if player == name then
             app:log(string.format("You rolled %s in a roll from %s to %s.", roll, minroll, maxroll));
         else
-            app:log(string.format("%s rolled %s in a roll from %s to %s.", player, roll, minroll, maxroll));
+            if not app.CurrentGame then
+                app.GameOffers[player] = {
+                    ["amount"] = maxroll * GOLD_MULTIPLIER,
+                    ["roll"] = roll,
+                };
+                app:print(string.format("%s has offered a deathroll for %s. Accept it by using '/dr accept'.", player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
+            elseif player == app.CurrentGame.opponent then
+
+            end
+
+            -- app:log(string.format("%s rolled %s in a roll from %s to %s.", player, roll, minroll, maxroll));
         end
     else
         app:log("Got the event but nobody rolled.");
