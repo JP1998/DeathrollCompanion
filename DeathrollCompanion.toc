@@ -4,7 +4,7 @@
 ## SavedVariables: DeathrollCompanionData
 ## Notes:
 ## Version: @project-version@
-## X-Wago-ID: NYI
+## X-Wago-ID: aNevdB62
 src/base.lua
 locales/enUS.lua
 locales/enGB.lua
