@@ -1,11 +1,18 @@
 
 # Deathroll Companion
 
-TODO: Update readme!
+This addon is a simple companion for anyone wanting to gamble their live savings away in WoW through so-called deathrolls.
 
 ## Features
 
+Currently the only feature of this addon is the automatic rolling in a deathroll against a single opponent. Also, although you can't currently display them, your stats as to how often and how much gold you win/lose is already being tracked.
 
+### Usage
+
+In order to use the addon you simply have to use the chat commant `/deathroll` (or `/dr` for short):
+
+ - `/deathroll <amount>` will start a deathroll for anyone to join with given amount (in gold) as the bet
+ - `/deathroll accept` will accept someone elses invitation to a deathroll (through a roll in chat)
 
 ## Installation
 
@@ -15,7 +22,9 @@ I've chosen these platforms because they are the ones I personally use, and at t
 
 ## Planned features and improvements
 
-
+ - Actual display of the currently collected stats (e.g. if you target someone and use the command `/deathroll stats` you see your stats in deathrolls against your current target).
+ - If you lose a deathroll and you trade your opponent (or they trade you) the gold should automatically be populated. Automatically accepting the trade, however, is neither wished nor possible.
+ - Better selection of which deathroll offer you want to accept. If there are multiple rolls that have happened recently you should be able to target someone to accept **their** offer, or just specify your opponents name as an additional argument to the accept command.
 
 ## Contribute
 
