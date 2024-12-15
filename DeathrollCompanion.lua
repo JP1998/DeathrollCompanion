@@ -317,6 +317,16 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 end
             end
         else
+            if not app.Data.OpponentStats[app.CurrentGame.opponent] then
+                app.Data.OpponentStats[app.CurrentGame.opponent] = {
+                    ["wins"] = 0,
+                    ["losses"] = 0,
+                    ["goldWon"] = 0,
+                    ["goldLost"] = 0,
+                    ["goldDiff"] = 0
+                };
+            end
+
             if player == name then
                 app:log("You lost!");
 
@@ -328,6 +338,10 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app.Data.History.losses = app.Data.History.losses + 1;
                 app.Data.History.goldLost = app.Data.History.goldLost + app.CurrentGame.amount;
                 app.Data.History.goldDiff = app.Data.History.goldDiff - app.CurrentGame.amount;
+
+                app.Data.OpponentStats[app.CurrentGame.opponent].losses = app.Data.OpponentStats[app.CurrentGame.opponent].losses + 1;
+                app.Data.OpponentStats[app.CurrentGame.opponent].goldLost = app.Data.OpponentStats[app.CurrentGame.opponent].goldLost + app.CurrentGame.amount;
+                app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff - app.CurrentGame.amount;
 
                 -- TODO: Add logic for automatic trading (or at least for automatic filling of the amount)
             elseif app.CurrentGame and player == app.CurrentGame.opponent then
@@ -341,6 +355,10 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app.Data.History.wins = app.Data.History.wins + 1;
                 app.Data.History.goldWon = app.Data.History.goldWon + app.CurrentGame.amount;
                 app.Data.History.goldDiff = app.Data.History.goldDiff + app.CurrentGame.amount;
+
+                app.Data.OpponentStats[app.CurrentGame.opponent].wins = app.Data.OpponentStats[app.CurrentGame.opponent].wins + 1;
+                app.Data.OpponentStats[app.CurrentGame.opponent].goldWon = app.Data.OpponentStats[app.CurrentGame.opponent].goldWon + app.CurrentGame.amount;
+                app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff + app.CurrentGame.amount;
             end
 
             app.CurrentGame = nil;
