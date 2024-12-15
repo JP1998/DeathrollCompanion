@@ -138,6 +138,29 @@ local createSlashCommand = (function()
     end
 end)();
 
+local GOLD_MULTIPLIER = 10000;
+
+app.GameOffers = {
+    ["history"] = {},
+    ["player"] = {}
+    --[[
+    {
+        ["opponent"] = "Name",
+        ["amount"] = 1234,
+        ["roll"] = 1234,
+    }
+    ]]
+};
+
+app.CurrentGame = nil;
+--[[
+    {
+        ["amount"] = 0,
+        ["latestRoll"] = 0,
+        ["opponent"] = "Name";
+    }
+]]
+
 local function dr_slashhandler(args, msgbox)
     app:log("You typed '/dr' or something similar.");
 
@@ -166,8 +189,18 @@ local function dr_slashhandler(args, msgbox)
             app.Data.Debug.Enabled = value;
             app:print(string.format(L["MESSAGE_DEBUG_TOGGLE"], tostring(value)));
         else
-            -- Couldve put in a number for a deathroll
-            app:log("Got some args");
+            local roll = tonumber(cmd);
+
+            if roll == nil then
+                app:log("Cannot deathroll without a value.");
+            else
+                app.CurrentGame = {
+                    ["amount"] = roll * GOLD_MULTIPLIER,
+                    ["latestRoll"] = roll,
+                    ["opponent"] = nil,
+                };
+                RandomRoll(1, roll);
+            end
         end
     else
         app:log("didnt get any args");
@@ -216,29 +249,6 @@ local DeathrollCompanionData_Base = {
         }
     }
 }
-
-local GOLD_MULTIPLIER = 10000;
-
-app.GameOffers = {
-    ["history"] = {},
-    ["player"] = {}
-    --[[
-    {
-        ["opponent"] = "Name",
-        ["amount"] = 1234,
-        ["roll"] = 1234,
-    }
-    ]]
-};
-
-app.CurrentGame = nil;
---[[
-    {
-        ["amount"] = 0,
-        ["latestRoll"] = 0,
-        ["opponent"] = "Name";
-    }
-]]
 
 app:RegisterEvent("ADDON_LOADED", "DeathrollCompanion", function(addon)
     if addon ~= app:GetName() then
@@ -297,12 +307,19 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app.GameOffers[player] = offer;
                     table.insert(app.GameOffers.history, 1, offer);
                     app:print(string.format("%s has offered a deathroll for %s. Accept it by using '/dr accept'.", player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
-                elseif player == app.CurrentGame.opponent then
-                    if maxroll ~= app.CurrentGame.latestRoll then
-                        app:log("Opponent made a mistake in the roll.");
-                    else
-                        app.CurrentGame.latestRoll = roll;
-                        RandomRoll(1, roll);
+                else
+                    if not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
+                        app:log(player .. " has accepted your deathroll.");
+                        app.CurrentGame.opponent = player;
+                    end
+
+                    if player == app.CurrentGame.opponent then
+                        if maxroll ~= app.CurrentGame.latestRoll then
+                            app:log("Opponent made a mistake in the roll.");
+                        else
+                            app.CurrentGame.latestRoll = roll;
+                            RandomRoll(1, roll);
+                        end
                     end
                 end
 
