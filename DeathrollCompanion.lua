@@ -321,7 +321,7 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app:log("You lost!");
 
                 table.insert(app.Data.History, 1, {
-                    ["opponent"] = player,
+                    ["opponent"] = app.CurrentGame.opponent,
                     ["amount"] = app.CurrentGame.amount,
                     ["win"] = false,
                 });
@@ -334,7 +334,7 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app:log("You won!");
 
                 table.insert(app.Data.History, 1, {
-                    ["opponent"] = player,
+                    ["opponent"] = app.CurrentGame.opponent,
                     ["amount"] = app.CurrentGame.amount,
                     ["win"] = true,
                 });
