@@ -19,4 +19,6 @@ app.L = {
     ["DEATHROLL_ERROR_MAXROLLNOTCORRECT"] = "%s made a mistake in their roll. Their maximum value in the roll was %s. It should've been %s.";
     ["DEATHROLL_NEWOFFER"] = "%s has offered a deathroll for %s. Accept it by using '/dr accept'.";
     ["DEATHROLL_OPPONENTACCEPTED"] = "%s has accepted your deathroll offer for %s. Good Luck!";
+    ["DEATHROLL_WON"] = "You have won against %s. They owe you %s.";
+    ["DEATHROLL_LOST"] = "You have lost against %s. You owe them %s.";
 };

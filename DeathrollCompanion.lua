@@ -329,8 +329,6 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
             end
 
             if player == name then
-                app:log("You lost!");
-
                 table.insert(app.Data.History, 1, {
                     ["opponent"] = app.CurrentGame.opponent,
                     ["amount"] = app.CurrentGame.amount,
@@ -344,10 +342,10 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app.Data.OpponentStats[app.CurrentGame.opponent].goldLost = app.Data.OpponentStats[app.CurrentGame.opponent].goldLost + app.CurrentGame.amount;
                 app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff - app.CurrentGame.amount;
 
+                app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponent, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+
                 -- TODO: Add logic for automatic trading (or at least for automatic filling of the amount)
             elseif app.CurrentGame and player == app.CurrentGame.opponent then
-                app:log("You won!");
-
                 table.insert(app.Data.History, 1, {
                     ["opponent"] = app.CurrentGame.opponent,
                     ["amount"] = app.CurrentGame.amount,
@@ -360,6 +358,8 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app.Data.OpponentStats[app.CurrentGame.opponent].wins = app.Data.OpponentStats[app.CurrentGame.opponent].wins + 1;
                 app.Data.OpponentStats[app.CurrentGame.opponent].goldWon = app.Data.OpponentStats[app.CurrentGame.opponent].goldWon + app.CurrentGame.amount;
                 app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff + app.CurrentGame.amount;
+
+                app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponent, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
             end
 
             app.CurrentGame = nil;
