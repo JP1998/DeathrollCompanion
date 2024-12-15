@@ -147,7 +147,7 @@ app.GameOffers = {
     {
         ["opponent"] = "Name",
         ["amount"] = 1234,
-        ["roll"] = 1234,
+        ["roll"] = 1234
     }
     ]]
 };
@@ -157,7 +157,7 @@ app.CurrentGame = nil;
     {
         ["amount"] = 0,
         ["latestRoll"] = 0,
-        ["opponent"] = "Name";
+        ["opponent"] = "Name"
     }
 ]]
 
@@ -168,6 +168,7 @@ local function dr_slashhandler(args, msgbox)
         local cmd = string.lower(args[1]);
 
         if cmd == "accept" then
+            -- TODO: Make it able to be accepted through given name or target
             local offer = app.GameOffers.history[1];
 
             app.CurrentGame = {
@@ -223,30 +224,22 @@ local DeathrollCompanionData_Base = {
             ["win"] = true/false,
         }, -- [1]
         ]]--
+        ["wins"] = 0,
+        ["losses"] = 0,
+        ["goldWon"] = 0,
+        ["goldLost"] = 0,
+        ["goldDiff"] = 0,
     },
-    ["wins"] = {
-        ["amount"] = 0,
-        ["gold"] = 0,
-        ["opponentStats"] = {
-            --[[
-            ["Name-Server"] = {
-                ["amount"] = 0,
-                ["gold"] = 0,
-            }
-            --]]
+    ["OpponentStats"] = {
+        --[[
+        ["Name-Server"] = {
+            ["wins"] = 0,
+            ["losses"] = 0,
+            ["goldWon"] = 0,
+            ["goldLost"] = 0,
+            ["goldDiff"] = 0,
         }
-    },
-    ["losses"] = {
-        ["amount"] = 0,
-        ["gold"] = 0,
-        ["opponentStats"] = {
-            --[[
-            ["Name-Server"] = {
-                ["amount"] = 0,
-                ["gold"] = 0,
-            }
-            --]]
-        }
+        --]]
     }
 }
 
@@ -322,17 +315,35 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                         end
                     end
                 end
-
-                -- app:log(string.format("%s rolled %s in a roll from %s to %s.", player, roll, minroll, maxroll));
             end
         else
             if player == name then
-                -- Lost!
                 app:log("You lost!");
+
+                table.insert(app.Data.History, 1, {
+                    ["opponent"] = player,
+                    ["amount"] = app.CurrentGame.amount,
+                    ["win"] = false,
+                });
+                app.Data.History.losses = app.Data.History.losses + 1;
+                app.Data.History.goldLost = app.Data.History.goldLost + app.CurrentGame.amount;
+                app.Data.History.goldDiff = app.Data.History.goldDiff - app.CurrentGame.amount;
+
+                -- TODO: Add logic for automatic trading (or at least for automatic filling of the amount)
             elseif app.CurrentGame and player == app.CurrentGame.opponent then
-                -- Won!
                 app:log("You won!");
+
+                table.insert(app.Data.History, 1, {
+                    ["opponent"] = player,
+                    ["amount"] = app.CurrentGame.amount,
+                    ["win"] = true,
+                });
+                app.Data.History.wins = app.Data.History.wins + 1;
+                app.Data.History.goldWon = app.Data.History.goldWon + app.CurrentGame.amount;
+                app.Data.History.goldDiff = app.Data.History.goldDiff + app.CurrentGame.amount;
             end
+
+            app.CurrentGame = nil;
         end
     end
 end);
