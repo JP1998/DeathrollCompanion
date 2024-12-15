@@ -162,8 +162,6 @@ app.CurrentGame = nil;
 ]]
 
 local function dr_slashhandler(args, msgbox)
-    app:log("You typed '/dr' or something similar.");
-
     if #args > 0 then
         local cmd = string.lower(args[1]);
 
@@ -193,7 +191,7 @@ local function dr_slashhandler(args, msgbox)
             local roll = tonumber(cmd);
 
             if roll == nil then
-                app:log("Cannot deathroll without a value.");
+                app:print(string.format(L["ERROR_UNKNOWN_COMMAND"], cmd));
             else
                 app.CurrentGame = {
                     ["amount"] = roll * GOLD_MULTIPLIER,
@@ -204,7 +202,7 @@ local function dr_slashhandler(args, msgbox)
             end
         end
     else
-        app:log("didnt get any args");
+        app:print(L["ERROR_NO_COMMAND"]);
     end
 end
 
@@ -280,7 +278,10 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
         maxroll = tonumber(maxroll);
 
         if minroll ~= 1 then
-            app:log("Someone rolled with min roll ~= 1")
+            if app.CurrentGame and (name == player or player == app.CurrentGame.opponent) and maxroll == app.CurrentGame.latestRoll then
+                app:print(string.format(L["DEATHROLL_ERROR_MINROLLNOTONE"], player, minroll));
+            end
+
             return;
         end
 
@@ -299,16 +300,16 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
 
                     app.GameOffers[player] = offer;
                     table.insert(app.GameOffers.history, 1, offer);
-                    app:print(string.format("%s has offered a deathroll for %s. Accept it by using '/dr accept'.", player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
+                    app:print(string.format(L["DEATHROLL_NEWOFFER"], player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
                 else
                     if not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
-                        app:log(player .. " has accepted your deathroll.");
+                        app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], player, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
                         app.CurrentGame.opponent = player;
                     end
 
                     if player == app.CurrentGame.opponent then
                         if maxroll ~= app.CurrentGame.latestRoll then
-                            app:log("Opponent made a mistake in the roll.");
+                            app:print(string.format(L["DEATHROLL_ERROR_MAXROLLNOTCORRECT"], player, maxroll, app.CurrentGame.latestRoll));
                         else
                             app.CurrentGame.latestRoll = roll;
                             RandomRoll(1, roll);
