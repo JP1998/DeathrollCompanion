@@ -144,7 +144,16 @@ local function dr_slashhandler(args, msgbox)
     if #args > 0 then
         local cmd = string.lower(args[1]);
 
-        if cmd == "stats" then
+        if cmd == "accept" then
+            local offer = app.GameOffers.history[1];
+
+            app.CurrentGame = {
+                ["amount"] = offer.amount,
+                ["latestRoll"] = offer.roll,
+                ["opponent"] = offer.opponent,
+            };
+            RandomRoll(1, offer.roll);
+        elseif cmd == "stats" then
             app:log("Stats for a player");
         elseif cmd == "help" then
             if #args > 1 and string.lower(args[2]) == "advanced" then
@@ -211,8 +220,11 @@ local DeathrollCompanionData_Base = {
 local GOLD_MULTIPLIER = 10000;
 
 app.GameOffers = {
+    ["history"] = {},
+    ["player"] = {}
     --[[
-    ["name"] = {
+    {
+        ["opponent"] = "Name",
         ["amount"] = 1234,
         ["roll"] = 1234,
     }
@@ -260,22 +272,50 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
     local name,server = UnitFullName("player");
 
     if player ~= nil then
-        if player == name then
-            app:log(string.format("You rolled %s in a roll from %s to %s.", roll, minroll, maxroll));
-        else
-            if not app.CurrentGame then
-                app.GameOffers[player] = {
-                    ["amount"] = maxroll * GOLD_MULTIPLIER,
-                    ["roll"] = roll,
-                };
-                app:print(string.format("%s has offered a deathroll for %s. Accept it by using '/dr accept'.", player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
-            elseif player == app.CurrentGame.opponent then
+        roll = tonumber(roll);
+        minroll = tonumber(minroll);
+        maxroll = tonumber(maxroll);
 
-            end
-
-            -- app:log(string.format("%s rolled %s in a roll from %s to %s.", player, roll, minroll, maxroll));
+        if minroll ~= 1 then
+            app:log("Someone rolled with min roll ~= 1")
+            return;
         end
-    else
-        app:log("Got the event but nobody rolled.");
+
+        if roll > 1 then
+            if player == name then
+                if app.CurrentGame and maxroll == app.CurrentGame.latestRoll then
+                    app.CurrentGame.latestRoll = roll;
+                end
+            else
+                if not app.CurrentGame then
+                    local offer = {
+                        ["opponent"] = player,
+                        ["amount"] = maxroll * GOLD_MULTIPLIER,
+                        ["roll"] = roll,
+                    };
+
+                    app.GameOffers[player] = offer;
+                    table.insert(app.GameOffers.history, 1, offer);
+                    app:print(string.format("%s has offered a deathroll for %s. Accept it by using '/dr accept'.", player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
+                elseif player == app.CurrentGame.opponent then
+                    if maxroll ~= app.CurrentGame.latestRoll then
+                        app:log("Opponent made a mistake in the roll.");
+                    else
+                        app.CurrentGame.latestRoll = roll;
+                        RandomRoll(1, roll);
+                    end
+                end
+
+                -- app:log(string.format("%s rolled %s in a roll from %s to %s.", player, roll, minroll, maxroll));
+            end
+        else
+            if player == name then
+                -- Lost!
+                app:log("You lost!");
+            elseif app.CurrentGame and player == app.CurrentGame.opponent then
+                -- Won!
+                app:log("You won!");
+            end
+        end
     end
 end);
