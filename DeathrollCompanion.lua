@@ -161,6 +161,9 @@ app.CurrentGame = nil;
     }
 ]]
 
+app.TradingQueue = {};
+-- ["name"] = amount;
+
 local function dr_slashhandler(args, msgbox)
     if #args > 0 then
         local cmd = string.lower(args[1]);
@@ -363,7 +366,11 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
 
                     app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponent, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
 
-                    -- TODO: Add logic for automatic trading (or at least for automatic filling of the amount)
+                    if not app.TradingQueue[app.CurrentGame.opponent] then
+                        app.TradingQueue[app.CurrentGame.opponent] = app.CurrentGame.amount;
+                    else
+                        app.TradingQueue[app.CurrentGame.opponent] = app.TradingQueue[app.CurrentGame.opponent] + app.CurrentGame.amount;
+                    end
                 elseif app.CurrentGame and player == app.CurrentGame.opponent then
                     app:log("it was our opponent that rolled. we won.");
 
@@ -394,4 +401,32 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
             app.CurrentGame = nil;
         end
     end
+end);
+
+app:RegisterEvent("TRADE_SHOW", "DeathrollCompanion", function()
+    local name,server = UnitFullName("player");
+    local tradername, traderserver = UnitFullName("NPC");
+
+    if traderserver == nil then
+        traderserver = server;
+    end
+
+    local traderfullname = tradername .. "-" .. traderserver;
+
+    local amountToTrade;
+
+    if app.TradingQueue[tradername] then
+        amountToTrade = app.TradingQueue[tradername];
+        app.TradingQueue[tradername] = nil;
+    elseif app.TradingQueue[traderfullname] then
+        amountToTrade = app.TradingQueue[traderfullname];
+        app.TradingQueue[traderfullname] = nil;
+    else
+        app:log("Dont have anything to trade that person. Ignoring trade.")
+        return;
+    end
+
+    MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, amountToTrade);
+
+    app:log("Added " .. C_CurrencyInfo.GetCoinTextureString(amountToTrade) .. " to the trade with " .. traderfullname);
 end);
