@@ -138,6 +138,17 @@ local createSlashCommand = (function()
     end
 end)();
 
+local function GetCharacterFullName(name)
+    local _,playerServer = UnitFullName("player");
+    local characterName, characterServer = UnitFullName(name);
+
+    if not characterServer then
+        characterServer = playerServer;
+    end
+
+    return characterName .. "-" .. characterServer;
+end
+
 local GOLD_MULTIPLIER = 10000;
 
 app.GameOffers = {
@@ -146,6 +157,7 @@ app.GameOffers = {
     --[[
     {
         ["opponent"] = "Name",
+        ["opponentFullName"] = "Name-Server",
         ["amount"] = 1234,
         ["roll"] = 1234
     }
@@ -157,12 +169,13 @@ app.CurrentGame = nil;
     {
         ["amount"] = 0,
         ["latestRoll"] = 0,
-        ["opponent"] = "Name"
+        ["opponent"] = "Name",
+        ["opponentFullName"] = "Name-Server"
     }
 ]]
 
 app.TradingQueue = {};
--- ["name"] = amount;
+-- ["Name-Server"] = amount;
 
 local function dr_slashhandler(args, msgbox)
     if #args > 0 then
@@ -176,6 +189,7 @@ local function dr_slashhandler(args, msgbox)
                 ["amount"] = offer.amount,
                 ["latestRoll"] = offer.roll,
                 ["opponent"] = offer.opponent,
+                ["opponentFullName"] = offer.opponentFullName,
             };
             RandomRoll(1, offer.roll);
         elseif cmd == "stats" then
@@ -200,6 +214,7 @@ local function dr_slashhandler(args, msgbox)
                     ["amount"] = roll * GOLD_MULTIPLIER,
                     ["latestRoll"] = roll,
                     ["opponent"] = nil,
+                    ["opponentFullName"] = nil,
                 };
                 RandomRoll(1, roll);
             end
@@ -220,7 +235,7 @@ local DeathrollCompanionData_Base = {
     ["History"] = {
         --[[
         {
-            ["opponent"] = "Name",
+            ["opponent"] = "Name-Server",
             ["amount"] = 1234,
             ["win"] = true/false,
         }, -- [1]
@@ -304,7 +319,9 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                 app:log("someone else rolled that");
                 if not app.CurrentGame then
                     app:log("and we are currently not in a game. They made an offer");
+
                     local offer = {
+                        ["opponentFullName"] = GetCharacterFullName(player),
                         ["opponent"] = player,
                         ["amount"] = maxroll * GOLD_MULTIPLIER,
                         ["roll"] = roll,
@@ -319,6 +336,7 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                         app:log("we didnt have an opponent yet and their roll fits. They accepted our offer.");
                         app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], player, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
                         app.CurrentGame.opponent = player;
+                        app.CurrentGame.opponentFullName = GetCharacterFullName(player);
                     end
 
                     if player == app.CurrentGame.opponent then
@@ -337,9 +355,9 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
         else
             app:log("Their roll was 1");
 
-            if app.CurrentGame and app.CurrentGame.opponent then
-                if not app.Data.OpponentStats[app.CurrentGame.opponent] then
-                    app.Data.OpponentStats[app.CurrentGame.opponent] = {
+            if app.CurrentGame and app.CurrentGame.opponentFullName then
+                if not app.Data.OpponentStats[app.CurrentGame.opponentFullName] then
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName] = {
                         ["wins"] = 0,
                         ["losses"] = 0,
                         ["goldWon"] = 0,
@@ -352,7 +370,7 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app:log("it was us that rolled. we lost.");
 
                     table.insert(app.Data.History, 1, {
-                        ["opponent"] = app.CurrentGame.opponent,
+                        ["opponent"] = app.CurrentGame.opponentFullName,
                         ["amount"] = app.CurrentGame.amount,
                         ["win"] = false,
                     });
@@ -360,22 +378,22 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app.Data.History.goldLost = app.Data.History.goldLost + app.CurrentGame.amount;
                     app.Data.History.goldDiff = app.Data.History.goldDiff - app.CurrentGame.amount;
 
-                    app.Data.OpponentStats[app.CurrentGame.opponent].losses = app.Data.OpponentStats[app.CurrentGame.opponent].losses + 1;
-                    app.Data.OpponentStats[app.CurrentGame.opponent].goldLost = app.Data.OpponentStats[app.CurrentGame.opponent].goldLost + app.CurrentGame.amount;
-                    app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff - app.CurrentGame.amount;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses = app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses + 1;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost + app.CurrentGame.amount;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff - app.CurrentGame.amount;
 
-                    app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponent, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+                    app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
 
-                    if not app.TradingQueue[app.CurrentGame.opponent] then
-                        app.TradingQueue[app.CurrentGame.opponent] = app.CurrentGame.amount;
+                    if not app.TradingQueue[app.CurrentGame.opponentFullName] then
+                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.CurrentGame.amount;
                     else
-                        app.TradingQueue[app.CurrentGame.opponent] = app.TradingQueue[app.CurrentGame.opponent] + app.CurrentGame.amount;
+                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] + app.CurrentGame.amount;
                     end
                 elseif app.CurrentGame and player == app.CurrentGame.opponent then
                     app:log("it was our opponent that rolled. we won.");
 
                     table.insert(app.Data.History, 1, {
-                        ["opponent"] = app.CurrentGame.opponent,
+                        ["opponent"] = app.CurrentGame.opponentFullName,
                         ["amount"] = app.CurrentGame.amount,
                         ["win"] = true,
                     });
@@ -383,11 +401,11 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app.Data.History.goldWon = app.Data.History.goldWon + app.CurrentGame.amount;
                     app.Data.History.goldDiff = app.Data.History.goldDiff + app.CurrentGame.amount;
 
-                    app.Data.OpponentStats[app.CurrentGame.opponent].wins = app.Data.OpponentStats[app.CurrentGame.opponent].wins + 1;
-                    app.Data.OpponentStats[app.CurrentGame.opponent].goldWon = app.Data.OpponentStats[app.CurrentGame.opponent].goldWon + app.CurrentGame.amount;
-                    app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponent].goldDiff + app.CurrentGame.amount;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins = app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins + 1;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon + app.CurrentGame.amount;
+                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff + app.CurrentGame.amount;
 
-                    app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponent, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+                    app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
                 end
             else
                 if not app.CurrentGame then
