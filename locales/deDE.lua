@@ -26,7 +26,9 @@ for key, value in pairs({
     ["DEATHROLL_ERROR_MAXROLLNOTCORRECT"] = "%s hat einen Fehler mit seinem Würfel gemacht. Der Maximalwert war %s. Er hätte %s sein sollen.";
     ["DEATHROLL_NEWOFFER"] = "%s hat ein Deathroll mit einem Einsatz von %s angeboten. Nutze '/dr accept' um das Angebot anzunehmen.";
     ["DEATHROLL_OPPONENTACCEPTED"] = "%s hat dein Angebot zu einem Deathroll mit einem Einsatz von %s angenommen. Viel Glück!";
-    -- ["DEATHROLL_WON"] = "You have won against %s. They owe you %s.";
-    -- ["DEATHROLL_LOST"] = "You have lost against %s. You owe them %s.";
+    ["DEATHROLL_WON"] = "Du hast gegen %s gewonnen. Sie schulden dir %s.";
+    ["DEATHROLL_LOST"] = "Du hast gegen %s verloren. Du schuldest Ihnen %s.";
+    ["DEATHROLL_ADDEDMONEY"] = "Wir haben %s zu deinem Handel mit %s hinzugefügt.";
+    ["DEATHROLL_CANTTRADE"] = "Du hast nicht genügend Gold um deine Schulden in Höhe von %s bei %s zu bezahlen.";
 })
 do L[key] = value; end

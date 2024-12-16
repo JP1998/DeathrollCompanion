@@ -413,20 +413,24 @@ app:RegisterEvent("TRADE_SHOW", "DeathrollCompanion", function()
 
     local traderfullname = tradername .. "-" .. traderserver;
 
-    local amountToTrade;
+    local index;
 
     if app.TradingQueue[tradername] then
-        amountToTrade = app.TradingQueue[tradername];
-        app.TradingQueue[tradername] = nil;
+        index = tradername;
     elseif app.TradingQueue[traderfullname] then
-        amountToTrade = app.TradingQueue[traderfullname];
-        app.TradingQueue[traderfullname] = nil;
+        index = traderfullname;
     else
         app:log("Dont have anything to trade that person. Ignoring trade.")
         return;
     end
 
-    MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, amountToTrade);
+    local amountToTrade = app.TradingQueue[index];
 
-    app:log("Added " .. C_CurrencyInfo.GetCoinTextureString(amountToTrade) .. " to the trade with " .. traderfullname);
+    if GetMoney() < amountToTrade then
+        app:print(string.format(L["DEATHROLL_CANTTRADE"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
+    else
+        MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, amountToTrade);
+        app.TradingQueue[index] = nil;
+        app:print(string.format(L["DEATHROLL_ADDEDMONEY"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
+    end
 end);

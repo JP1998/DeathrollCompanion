@@ -28,5 +28,7 @@ for key, value in pairs({
     -- ["DEATHROLL_OPPONENTACCEPTED"] = "%s has accepted your deathroll offer for %s. Good Luck!";
     -- ["DEATHROLL_WON"] = "You have won against %s. They owe you %s.";
     -- ["DEATHROLL_LOST"] = "You have lost against %s. You owe them %s.";
+    -- ["DEATHROLL_ADDEDMONEY"] = "Added %s to the trade with %s.";
+    -- ["DEATHROLL_CANTTRADE"] = "You do not have the funds to pay your debt of %s to %s.";
 })
 do L[key] = value; end
