@@ -307,6 +307,14 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
             return;
         end
 
+        if app.CurrentGame and player ~= name and not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
+            app:log("Someone accepted our offer to a deathroll.");
+
+            app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], player, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
+            app.CurrentGame.opponent = player;
+            app.CurrentGame.opponentFullName = GetCharacterFullName(player);
+        end
+
         if roll > 1 then
             app:log("Their roll was not 1. The game must go on");
             if player == name then
@@ -332,12 +340,6 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app:print(string.format(L["DEATHROLL_NEWOFFER"], player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
                 else
                     app:log("and we are currently in a game.");
-                    if not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
-                        app:log("we didnt have an opponent yet and their roll fits. They accepted our offer.");
-                        app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], player, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
-                        app.CurrentGame.opponent = player;
-                        app.CurrentGame.opponentFullName = GetCharacterFullName(player);
-                    end
 
                     if player == app.CurrentGame.opponent then
                         app:log("it was our opponent that rolled");
