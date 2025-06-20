@@ -192,6 +192,9 @@ local function dr_slashhandler(args, msgbox)
                 ["opponentFullName"] = offer.opponentFullName,
             };
             RandomRoll(1, offer.roll);
+        elseif cmd == "abort" then
+            app.CurrentGame = nil;
+            app:print("Aborted current game. Feel free to initiate or accept another death roll.");
         elseif cmd == "stats" then
             app:log("Stats for a player");
         elseif cmd == "help" then
