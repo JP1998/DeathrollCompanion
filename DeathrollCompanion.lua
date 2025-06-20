@@ -12,7 +12,7 @@ app.print = function(self, msg, ...)
     self:_print("", msg, ...);
 end
 app.log = function(self, msg, ...)
-    if self.Data.Debug.Enabled then
+    if self.Settings.Data.Debug.Enabled then
         self:_print("DEBUG ", msg, ...);
     end
 end
@@ -204,9 +204,10 @@ local function dr_slashhandler(args, msgbox)
                 app:print(L["HELP"]);
             end
         elseif cmd == "debug" then
-            local value = not app.Data.Debug.Enabled;
-            app.Data.Debug.Enabled = value;
+            local value = not app.Settings.Data.Debug.Enabled;
+            app.Settings.Data.Debug.Enabled = value;
             app:print(string.format(L["MESSAGE_DEBUG_TOGGLE"], tostring(value)));
+            app.Settings.DebugCheckBox:OnRefresh();
         else
             local roll = tonumber(cmd);
 
@@ -232,9 +233,6 @@ createSlashCommand(dr_slashhandler, "DeathrollCompanion", "/deathroll", "/dr");
 app.Data = {};
 
 local DeathrollCompanionData_Base = {
-    ["Debug"] = {
-        ["Enabled"] = false
-    },
     ["History"] = {
         --[[
         {
@@ -274,7 +272,8 @@ app:RegisterEvent("ADDON_LOADED", "DeathrollCompanion", function(addon)
     end
 
     app.Data = DeathrollCompanionData;
-
+    app.Settings:Initialize();
+    
     app:log(L["MESSAGE_DEBUG_GREETING"]);
 
     app:UnregisterEvent("ADDON_LOADED", "DeathrollCompanion");
