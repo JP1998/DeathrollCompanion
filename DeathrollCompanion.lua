@@ -415,6 +415,12 @@ app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
                     app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff + app.CurrentGame.amount;
 
                     app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+
+                    if not app.TradingQueue[app.CurrentGame.opponentFullName] then
+                        app.TradingQueue[app.CurrentGame.opponentFullName] = -app.CurrentGame.amount;
+                    else
+                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] - app.CurrentGame.amount;
+                    end
                 end
             else
                 if not app.CurrentGame then
@@ -447,17 +453,21 @@ app:RegisterEvent("TRADE_SHOW", "DeathrollCompanion", function()
     elseif app.TradingQueue[traderfullname] then
         index = traderfullname;
     else
-        app:log("Dont have anything to trade that person. Ignoring trade.")
+        app:log("Dont have anything to trade that person. Ignoring trade.");
         return;
     end
 
     local amountToTrade = app.TradingQueue[index];
 
-    if GetMoney() < amountToTrade then
-        app:print(string.format(L["DEATHROLL_CANTTRADE"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
+    if amountToTrade > 0 then
+        if GetMoney() < amountToTrade then
+            app:print(string.format(L["DEATHROLL_CANTTRADE"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
+        else
+            MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, amountToTrade);
+            app.TradingQueue[index] = nil;
+            app:print(string.format(L["DEATHROLL_ADDEDMONEY"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
+        end
     else
-        MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, amountToTrade);
         app.TradingQueue[index] = nil;
-        app:print(string.format(L["DEATHROLL_ADDEDMONEY"], C_CurrencyInfo.GetCoinTextureString(amountToTrade), traderfullname));
     end
 end);
