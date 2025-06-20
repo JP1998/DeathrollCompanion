@@ -209,6 +209,11 @@ local function dr_slashhandler(args, msgbox)
             app:print(string.format(L["MESSAGE_DEBUG_TOGGLE"], tostring(value)));
             app.Settings.DebugCheckBox:OnRefresh();
         else
+            if app.CurrentGame then
+                app:print("You can't start a deathroll while you're already in one. Finish your current game or abort it using /dr abort.");
+                return;
+            end
+
             local roll = tonumber(cmd);
 
             if roll == nil then
