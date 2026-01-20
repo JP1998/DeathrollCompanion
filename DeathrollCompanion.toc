@@ -1,5 +1,5 @@
 ## Author: Luckywolf-Stormrage (https://www.github.com/JP1998)
-## Interface: 110207
+## Interface: 120000
 ## Title: Deathroll Companion
 ## SavedVariables: DeathrollCompanionData, DeathrollCompanionSettings
 ## Notes:
