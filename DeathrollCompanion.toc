@@ -5,6 +5,7 @@
 ## Notes:
 ## Version: @project-version@
 ## X-Wago-ID: aNevdB62
+## X-Curse-Project-ID: 1521913
 src/base.lua
 locales/enUS.lua
 locales/enGB.lua
