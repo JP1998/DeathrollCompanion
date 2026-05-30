@@ -456,7 +456,16 @@ app.HandleChatMessage = function(message)
 end
 
 app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
-    app.HandleChatMessage(message);
+    app:log("issecret: " .. tostring(issecretvalue(message)));
+    app:log("canaccess: " .. tostring(canaccessvalue(message)));
+
+    if canaccessvalue(message) then
+        app.HandleChatMessage(message);
+    elseif app.CurrentGame and app.CurrentGame.opponent then
+        app:print("Due to Blizzard's API restrictions we cannot currently read rolls. Please update the game with /dr manual <number> or abort it with /dr abort");
+    elseif app.CurrentGame and not app.CurrentGame.opponent then
+        app:print("Due to Blizzard's API restrictions we cannot currently read rolls. We cannot see if or who may have accepted your deathroll.");
+    end
 end);
 
 app:RegisterEvent("TRADE_SHOW", "DeathrollCompanion", function()
