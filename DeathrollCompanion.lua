@@ -292,148 +292,171 @@ app:RegisterEvent("ADDON_LOADED", "DeathrollCompanion", function(addon)
     --                                                                                                          are even with them so far.
 end);
 
-app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
-    local player, roll, minroll, maxroll = strmatch(message, "(.*) rolls (%d+) %((%d+)%-(%d+)%)");
+app.CheckMinRoll = function(minroll)
+    if minroll ~= 1 then
+        app:log("Their minroll wasnt 1");
+        if app.CurrentGame and (selfname == rollername or rollername == app.CurrentGame.opponent) and maxroll == app.CurrentGame.latestRoll then
+            app:log("and they were involved in the game");
+            app:print(string.format(L["DEATHROLL_ERROR_MINROLLNOTONE"], rollername, minroll));
+        end
 
-    local name,server = UnitFullName("player");
+        return false;
+    end
 
-    if player ~= nil then
+    return true;
+end
+
+app.HandleContinuingRoll = function(selfname, rollername, roll, maxroll)
+    app:log("Their roll was not 1. The game must go on");
+    if rollername == selfname then
+        app:log("We rolled that");
+        if app.CurrentGame and maxroll == app.CurrentGame.latestRoll then
+            app:log("and we are currently in a game");
+            app.CurrentGame.latestRoll = roll;
+        end
+    else
+        app:log("someone else rolled that");
+        if not app.CurrentGame then
+            app:log("and we are currently not in a game. They made an offer");
+
+            local offer = {
+                ["opponentFullName"] = GetCharacterFullName(rollername),
+                ["opponent"] = rollername,
+                ["amount"] = maxroll * GOLD_MULTIPLIER,
+                ["roll"] = roll,
+            };
+
+            app.GameOffers[rollername] = offer;
+            table.insert(app.GameOffers.history, 1, offer);
+            app:print(string.format(L["DEATHROLL_NEWOFFER"], rollername, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
+        else
+            app:log("and we are currently in a game.");
+
+            if rollername == app.CurrentGame.opponent then
+                app:log("it was our opponent that rolled");
+                if maxroll ~= app.CurrentGame.latestRoll then
+                    app:log("but they made a mistake");
+                    app:print(string.format(L["DEATHROLL_ERROR_MAXROLLNOTCORRECT"], rollername, maxroll, app.CurrentGame.latestRoll));
+                else
+                    app:log("and the roll was valid. we are rolling ourselves");
+                    app.CurrentGame.latestRoll = roll;
+                    RandomRoll(1, roll);
+                end
+            end
+        end
+    end
+end
+
+app.HandleWinningRoll = function(selfname, rollername)
+    app:log("Their roll was 1");
+
+    if app.CurrentGame and app.CurrentGame.opponentFullName then
+        if not app.Data.OpponentStats[app.CurrentGame.opponentFullName] then
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName] = {
+                ["wins"] = 0,
+                ["losses"] = 0,
+                ["goldWon"] = 0,
+                ["goldLost"] = 0,
+                ["goldDiff"] = 0
+            };
+        end
+
+        if rollername == selfname then
+            app:log("it was us that rolled. we lost.");
+
+            table.insert(app.Data.History, 1, {
+                ["opponent"] = app.CurrentGame.opponentFullName,
+                ["amount"] = app.CurrentGame.amount,
+                ["win"] = false,
+            });
+            app.Data.History.losses = app.Data.History.losses + 1;
+            app.Data.History.goldLost = app.Data.History.goldLost + app.CurrentGame.amount;
+            app.Data.History.goldDiff = app.Data.History.goldDiff - app.CurrentGame.amount;
+
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses = app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses + 1;
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost + app.CurrentGame.amount;
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff - app.CurrentGame.amount;
+
+            app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+
+            if not app.TradingQueue[app.CurrentGame.opponentFullName] then
+                app.TradingQueue[app.CurrentGame.opponentFullName] = app.CurrentGame.amount;
+            else
+                app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] + app.CurrentGame.amount;
+            end
+        elseif app.CurrentGame and rollername == app.CurrentGame.opponent then
+            app:log("it was our opponent that rolled. we won.");
+
+            table.insert(app.Data.History, 1, {
+                ["opponent"] = app.CurrentGame.opponentFullName,
+                ["amount"] = app.CurrentGame.amount,
+                ["win"] = true,
+            });
+            app.Data.History.wins = app.Data.History.wins + 1;
+            app.Data.History.goldWon = app.Data.History.goldWon + app.CurrentGame.amount;
+            app.Data.History.goldDiff = app.Data.History.goldDiff + app.CurrentGame.amount;
+
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins = app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins + 1;
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon + app.CurrentGame.amount;
+            app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff + app.CurrentGame.amount;
+
+            app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
+
+            if not app.TradingQueue[app.CurrentGame.opponentFullName] then
+                app.TradingQueue[app.CurrentGame.opponentFullName] = -app.CurrentGame.amount;
+            else
+                app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] - app.CurrentGame.amount;
+            end
+        end
+    else
+        if not app.CurrentGame then
+            app:log("Ignoring a 1 roll since we are not in a game");
+        elseif not app.CurrentGame.opponent then
+            -- TODO: Display an actual message that says you had luck being unlucky. You dont owe anyone anything.
+            app:log("Ignoring a 1 roll since we are in a game but have no opponent");
+            -- TODO: Re-roll? since we most definitely made an offer but rolled a 1 straight off
+        end
+    end
+
+    app.CurrentGame = nil;
+end
+
+app.HandleRoll = function(rollername, roll, minroll, maxroll)
+    local selfname,server = UnitFullName("player");
+
+    if not app.CheckMinRoll(minroll) then return; end
+
+    if app.CurrentGame and rollername ~= selfname and not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
+        app:log("Someone accepted our offer to a deathroll.");
+
+        app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], rollername, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
+        app.CurrentGame.opponent = rollername;
+        app.CurrentGame.opponentFullName = GetCharacterFullName(rollername);
+    end
+
+    if roll > 1 then
+        app.HandleContinuingRoll(selfname, rollername, roll, maxroll);
+    else
+        app.HandleWinningRoll(selfname, rollername);
+    end
+end
+
+app.HandleChatMessage = function(message)
+    local rollername, roll, minroll, maxroll = strmatch(message, "(.*) rolls (%d+) %((%d+)%-(%d+)%)");
+
+    if rollername ~= nil then
         app:log("Someone rolled something");
 
         roll = tonumber(roll);
         minroll = tonumber(minroll);
         maxroll = tonumber(maxroll);
 
-        if minroll ~= 1 then
-            app:log("Their minroll wasnt 1");
-            if app.CurrentGame and (name == player or player == app.CurrentGame.opponent) and maxroll == app.CurrentGame.latestRoll then
-                app:log("and they were involved in the game");
-                app:print(string.format(L["DEATHROLL_ERROR_MINROLLNOTONE"], player, minroll));
-            end
-
-            return;
-        end
-
-        if app.CurrentGame and player ~= name and not app.CurrentGame.opponent and maxroll == app.CurrentGame.latestRoll then
-            app:log("Someone accepted our offer to a deathroll.");
-
-            app:print(string.format(L["DEATHROLL_OPPONENTACCEPTED"], player, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)))
-            app.CurrentGame.opponent = player;
-            app.CurrentGame.opponentFullName = GetCharacterFullName(player);
-        end
-
-        if roll > 1 then
-            app:log("Their roll was not 1. The game must go on");
-            if player == name then
-                app:log("We rolled that");
-                if app.CurrentGame and maxroll == app.CurrentGame.latestRoll then
-                    app:log("and we are currently in a game");
-                    app.CurrentGame.latestRoll = roll;
-                end
-            else
-                app:log("someone else rolled that");
-                if not app.CurrentGame then
-                    app:log("and we are currently not in a game. They made an offer");
-
-                    local offer = {
-                        ["opponentFullName"] = GetCharacterFullName(player),
-                        ["opponent"] = player,
-                        ["amount"] = maxroll * GOLD_MULTIPLIER,
-                        ["roll"] = roll,
-                    };
-
-                    app.GameOffers[player] = offer;
-                    table.insert(app.GameOffers.history, 1, offer);
-                    app:print(string.format(L["DEATHROLL_NEWOFFER"], player, C_CurrencyInfo.GetCoinTextureString(maxroll * GOLD_MULTIPLIER)));
-                else
-                    app:log("and we are currently in a game.");
-
-                    if player == app.CurrentGame.opponent then
-                        app:log("it was our opponent that rolled");
-                        if maxroll ~= app.CurrentGame.latestRoll then
-                            app:log("but they made a mistake");
-                            app:print(string.format(L["DEATHROLL_ERROR_MAXROLLNOTCORRECT"], player, maxroll, app.CurrentGame.latestRoll));
-                        else
-                            app:log("and the roll was valid. we are rolling ourselves");
-                            app.CurrentGame.latestRoll = roll;
-                            RandomRoll(1, roll);
-                        end
-                    end
-                end
-            end
-        else
-            app:log("Their roll was 1");
-
-            if app.CurrentGame and app.CurrentGame.opponentFullName then
-                if not app.Data.OpponentStats[app.CurrentGame.opponentFullName] then
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName] = {
-                        ["wins"] = 0,
-                        ["losses"] = 0,
-                        ["goldWon"] = 0,
-                        ["goldLost"] = 0,
-                        ["goldDiff"] = 0
-                    };
-                end
-
-                if player == name then
-                    app:log("it was us that rolled. we lost.");
-
-                    table.insert(app.Data.History, 1, {
-                        ["opponent"] = app.CurrentGame.opponentFullName,
-                        ["amount"] = app.CurrentGame.amount,
-                        ["win"] = false,
-                    });
-                    app.Data.History.losses = app.Data.History.losses + 1;
-                    app.Data.History.goldLost = app.Data.History.goldLost + app.CurrentGame.amount;
-                    app.Data.History.goldDiff = app.Data.History.goldDiff - app.CurrentGame.amount;
-
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses = app.Data.OpponentStats[app.CurrentGame.opponentFullName].losses + 1;
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldLost + app.CurrentGame.amount;
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff - app.CurrentGame.amount;
-
-                    app:print(string.format(L["DEATHROLL_LOST"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
-
-                    if not app.TradingQueue[app.CurrentGame.opponentFullName] then
-                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.CurrentGame.amount;
-                    else
-                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] + app.CurrentGame.amount;
-                    end
-                elseif app.CurrentGame and player == app.CurrentGame.opponent then
-                    app:log("it was our opponent that rolled. we won.");
-
-                    table.insert(app.Data.History, 1, {
-                        ["opponent"] = app.CurrentGame.opponentFullName,
-                        ["amount"] = app.CurrentGame.amount,
-                        ["win"] = true,
-                    });
-                    app.Data.History.wins = app.Data.History.wins + 1;
-                    app.Data.History.goldWon = app.Data.History.goldWon + app.CurrentGame.amount;
-                    app.Data.History.goldDiff = app.Data.History.goldDiff + app.CurrentGame.amount;
-
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins = app.Data.OpponentStats[app.CurrentGame.opponentFullName].wins + 1;
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldWon + app.CurrentGame.amount;
-                    app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff = app.Data.OpponentStats[app.CurrentGame.opponentFullName].goldDiff + app.CurrentGame.amount;
-
-                    app:print(string.format(L["DEATHROLL_WON"], app.CurrentGame.opponentFullName, C_CurrencyInfo.GetCoinTextureString(app.CurrentGame.amount)));
-
-                    if not app.TradingQueue[app.CurrentGame.opponentFullName] then
-                        app.TradingQueue[app.CurrentGame.opponentFullName] = -app.CurrentGame.amount;
-                    else
-                        app.TradingQueue[app.CurrentGame.opponentFullName] = app.TradingQueue[app.CurrentGame.opponentFullName] - app.CurrentGame.amount;
-                    end
-                end
-            else
-                if not app.CurrentGame then
-                    app:log("Ignoring a 1 roll since we are not in a game");
-                elseif not app.CurrentGame.opponent then
-                    app:log("Ignoring a 1 roll since we are in a game but have no opponent");
-                    -- TODO: Re-roll? since we most definitely made an offer but rolled a 1 straight off
-                end
-            end
-
-            app.CurrentGame = nil;
-        end
+        app.HandleRoll(rollername, roll, minroll, maxroll);
     end
+end
+
+app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
+    app.HandleChatMessage(message);
 end);
 
 app:RegisterEvent("TRADE_SHOW", "DeathrollCompanion", function()
