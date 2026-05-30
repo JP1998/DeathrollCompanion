@@ -292,6 +292,42 @@ app:RegisterEvent("ADDON_LOADED", "DeathrollCompanion", function(addon)
     --                                                                                                          are even with them so far.
 end);
 
+app.waitTable = {};
+app.waitFrame = nil;
+
+function app.wait(delay, func, ...)
+    if(type(delay)~="number" or type(func)~="function") then
+        return false;
+    end
+
+    if(app.waitFrame == nil) then
+        app.waitFrame = CreateFrame("Frame","WaitFrame", UIParent);
+        app.waitFrame:SetScript("onUpdate",function (self,elapse)
+            local count = #app.waitTable;
+            local i = 1;
+
+            while(i<=count) do
+                local waitRecord = tremove(app.waitTable,i);
+
+                local d = tremove(waitRecord,1);
+                local f = tremove(waitRecord,1);
+                local p = tremove(waitRecord,1);
+
+                if(d>elapse) then
+                    tinsert(app.waitTable,i,{d-elapse,f,p});
+                    i = i + 1;
+                else
+                    count = count - 1;
+                    f(unpack(p));
+                end
+            end
+        end);
+    end
+
+    tinsert(app.waitTable,{delay,func,{...}});
+    return true;
+end
+
 app.CheckMinRoll = function(minroll)
     if minroll ~= 1 then
         app:log("Their minroll wasnt 1");
@@ -340,7 +376,7 @@ app.HandleContinuingRoll = function(selfname, rollername, roll, maxroll)
                 else
                     app:log("and the roll was valid. we are rolling ourselves");
                     app.CurrentGame.latestRoll = roll;
-                    RandomRoll(1, roll);
+                    app.wait((random() * 7) + 0.5, RandomRoll, 1, roll);
                 end
             end
         end
