@@ -502,6 +502,7 @@ app:RegisterEvent("ENCOUNTER_START", "DeathrollCompanion", function()
 end);
 app.endEncounter = function()
     app.inEncounter = false;
+    app.MakeUpRoll();
 end
 app:RegisterEvent("ENCOUNTER_END", "DeathrollCompanion", app.endEncounter);
 
@@ -512,6 +513,7 @@ app:RegisterEvent("CHALLENGE_MODE_START", "DeathrollCompanion", function()
 end);
 app.endChallengeMode = function()
     app.inChallengeMode = false;
+    app.MakeUpRoll();
 end
 app:RegisterEvent("CHALLENGE_MODE_RESET", "DeathrollCompanion", app.endChallengeMode);
 app:RegisterEvent("CHALLENGE_MODE_COMPLETED", "DeathrollCompanion", app.endChallengeMode);
@@ -519,6 +521,12 @@ app:RegisterEvent("CHALLENGE_MODE_COMPLETED", "DeathrollCompanion", app.endChall
 
 app.CanRoll = function()
     return not app.inEncounter and not app.inChallengeMode;
+end
+app.MakeUpRoll = function()
+    if app.CanRoll() and app.linedUpRoll.linedUp then
+        app:print("Made up a roll from earlier. Still in a game with " .. app.CurrentGame.opponentFullName .. ".");
+        RandomRoll(1, app.linedUpRoll.maxRoll);
+    end
 end
 
 app.Roll = function(maxRoll)
