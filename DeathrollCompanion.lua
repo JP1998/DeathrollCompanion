@@ -208,6 +208,14 @@ local function dr_slashhandler(args, msgbox)
             app.Settings.Data.Debug.Enabled = value;
             app:print(string.format(L["MESSAGE_DEBUG_TOGGLE"], tostring(value)));
             app.Settings.DebugCheckBox:OnRefresh();
+        elseif cmd == "manual" then
+            local roll = tonumber(args[2]);
+
+            if not roll then
+                app:print("You need to provide the number your opponent or you has rolled.");
+            else
+                app.Roll(roll);
+            end
         else
             if app.CurrentGame then
                 app:print("You can't start a deathroll while you're already in one. Finish your current game or abort it using /dr abort.");
