@@ -491,6 +491,31 @@ app.HandleChatMessage = function(message)
     end
 end
 
+app.inEncounter = false;
+
+app:RegisterEvent("ENCOUNTER_START", "DeathrollCompanion", function()
+    app.inEncounter = true;
+end);
+app.endEncounter = function()
+    app.inEncounter = false;
+end
+app:RegisterEvent("ENCOUNTER_END", "DeathrollCompanion", app.endEncounter);
+
+app.inChallengeMode = false;
+
+app:RegisterEvent("CHALLENGE_MODE_START", "DeathrollCompanion", function()
+    app.inChallengeMode = true;
+end);
+app.endChallengeMode = function()
+    app.inChallengeMode = false;
+end
+app:RegisterEvent("CHALLENGE_MODE_RESET", "DeathrollCompanion", app.endChallengeMode);
+app:RegisterEvent("CHALLENGE_MODE_COMPLETED", "DeathrollCompanion", app.endChallengeMode);
+
+
+app.CanRoll = function()
+    return not app.inEncounter and not app.inChallengeMode;
+end
 
 app.Roll = function(maxRoll)
     RandomRoll(1, maxRoll);
