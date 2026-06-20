@@ -491,6 +491,10 @@ app.HandleChatMessage = function(message)
     end
 end
 
+app.linedUpRoll = {
+    ["linedUp"] = false;
+    ["maxRoll"] = -1;
+};
 app.inEncounter = false;
 
 app:RegisterEvent("ENCOUNTER_START", "DeathrollCompanion", function()
@@ -518,7 +522,13 @@ app.CanRoll = function()
 end
 
 app.Roll = function(maxRoll)
-    RandomRoll(1, maxRoll);
+    if app.CanRoll() then
+        RandomRoll(1, maxRoll);
+    else
+        app:print("An encounter or Mythic+ dungeon has interrupted our game. It will be continued once the encounter or dungeon has concluded.");
+        app.linedUpRoll.linedUp = true;
+        app.linedUpRoll.maxRoll = maxRoll;
+    end
 end
 
 app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
