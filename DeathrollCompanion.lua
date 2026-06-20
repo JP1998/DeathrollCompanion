@@ -376,7 +376,7 @@ app.HandleContinuingRoll = function(selfname, rollername, roll, maxroll)
                 else
                     app:log("and the roll was valid. we are rolling ourselves");
                     app.CurrentGame.latestRoll = roll;
-                    app.wait((random() * 7) + 0.5, RandomRoll, 1, roll);
+                    app.wait((random() * 7) + 0.5, app.Roll, roll);
                 end
             end
         end
@@ -489,6 +489,11 @@ app.HandleChatMessage = function(message)
 
         app.HandleRoll(rollername, roll, minroll, maxroll);
     end
+end
+
+
+app.Roll = function(maxRoll)
+    RandomRoll(1, maxRoll);
 end
 
 app:RegisterEvent("CHAT_MSG_SYSTEM", "DeathrollCompanion", function(message)
